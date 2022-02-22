@@ -32,7 +32,7 @@ Combine 4 image to 1 images by following config file.
     - path: One image path
     - offset: One image start offset(This might cause some problem if set in wrong address)
 
-  - STEP3. Run
+  - STEP3. Run\
            --> python img_comb.py --> choose mode[1]
 
 ### Note
