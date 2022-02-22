@@ -23,7 +23,8 @@ Combine 4 image to 1 images by following config file.
 
 ### Usage
   - **STEP1. Create a demo config file**\
-           --> python img_comb.py --> choose mode[0]
+           --> python img_comb.py --> choose mode[0]\
+           ![alt text](./demo_img/demo_img[0].png "MODE[0]")
            
   - **STEP2. Modify config file**
     - block_unit: Suppoment byte numbers for last image
@@ -33,7 +34,8 @@ Combine 4 image to 1 images by following config file.
     - offset: One image start offset(This might cause some problem if set in wrong address)
 
   - **STEP3. Run**\
-           --> python img_comb.py --> choose mode[1]
+           --> python img_comb.py --> choose mode[1]\
+           ![alt text](./demo_img/demo_img[1].png "MODE[1]")
 
 ### Note
 - 1: Please choose mode[0] to create folder ***./img*** and demo config file ***config.txt*** if first using this APP.
