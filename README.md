@@ -22,17 +22,17 @@ Combine 4 image to 1 images by following config file.
   Note: Given path should include "./img/"!
 
 ### Usage
-  - STEP1. Create a demo config file\
+  - **STEP1. Create a demo config file**\
            --> python img_comb.py --> choose mode[0]
            
-  - STEP2. Modify config file
+  - **STEP2. Modify config file**
     - block_unit: Suppoment byte numbers for last image
     - output_path: Final combine-image path
     - name: One image name(should not modify!)
     - path: One image path
     - offset: One image start offset(This might cause some problem if set in wrong address)
 
-  - STEP3. Run\
+  - **STEP3. Run**\
            --> python img_comb.py --> choose mode[1]
 
 ### Note
