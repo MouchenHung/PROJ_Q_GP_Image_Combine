@@ -38,4 +38,5 @@ Combine 4 image to 1 images by following config file.
 ### Note
 - 1: Please choose mode[0] to create folder ***./img*** and demo config file ***config.txt*** if first using this APP.
 - 2: Only need to modify ***config.txt*** and choose mode[1] after finished mode[0].
-- 3: 4 Images should put in ***./img*** folder.
+- 3: Images in ***./img*** folder is just demo, please add your own images into it.
+- 4: Images must only put in ***./img*** folder.
