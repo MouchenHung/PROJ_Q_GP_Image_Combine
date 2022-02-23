@@ -44,10 +44,6 @@ def is_binary(file_path):
 def is_file_size_legal(img_size_lst, img_offset_lst, img_path_lst):
     if (len(img_size_lst)!=IMG_NUM or len(img_offset_lst)!=IMG_NUM or len(img_path_lst)!=IMG_NUM):
         return False
-    
-    if img_offset_lst[0]:
-        print("<error> Img_0 offset should be 0x0!")
-        return False
         
     return True
 
