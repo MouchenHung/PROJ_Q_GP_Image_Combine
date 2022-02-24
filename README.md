@@ -27,7 +27,7 @@ Combine 4 image to 1 images by following config file.
            ![alt text](./demo_img/demo_mode[0].png "MODE[0]")
            
   - **STEP2. Modify config file**
-    - block_unit: Suppoment byte numbers for last image
+    - block_unit: Output image's block unit for last image padding, using k(1024b) as base
     - output_path: Final combine-image path
     - name: One image name(should not modify!)
     - path: One image path
