@@ -18,14 +18,19 @@ OFFSET_LST = [0x0, 0x4b000, 0x4b000*2, 0x4b000*3]
 BLOCK_UNIT = 64 # with 'k'
 CONFIG_FILE = "./config.txt"
 OUTPUT_IMG_PATH = "output_img.bin"
-
-def APP_HEADER():
-    print("====================================")
-    print("* APP name:    "+APP_NAME)
-    print("* APP auth:    "+APP_AUTH)
-    print("* APP version: "+APP_RELEASE_VER)
-    print("* APP date:    "+APP_RELEASE_DATE)
-    print("====================================")
+    
+def msg_hdr_print(hdr_type, msg, pre_msg=""):
+    if hdr_type == "s":     #system
+        header = "<system> "
+    elif hdr_type == "w":   #warning
+        header = "<warn> "
+    elif hdr_type == "e":   #error
+        header = "<error> "
+    elif hdr_type == "wdt": #watchdog
+        header = "<wdt> "
+    elif hdr_type == "n": #none
+        header = ""
+    print(pre_msg + header + msg)
 
 def is_file_exist(file_path):
     if not os.path.exists(file_path):
@@ -44,7 +49,6 @@ def is_binary(file_path):
 def is_file_size_legal(img_size_lst, img_offset_lst, img_path_lst):
     if (len(img_size_lst)!=IMG_NUM or len(img_offset_lst)!=IMG_NUM or len(img_path_lst)!=IMG_NUM):
         return False
-        
     return True
 
 def byte_to_k(byte_num):
@@ -92,102 +96,121 @@ def TOOL_CONFIG_WR(mode, file):
             ]
             
             return PACKAGE_CONFIG
-            
+
+def APP_HEADER():
+    msg_hdr_print("n", "========================================================")
+    msg_hdr_print("n", "* APP name:    "+APP_NAME)
+    msg_hdr_print("n", "* APP auth:    "+APP_AUTH)
+    msg_hdr_print("n", "* APP version: "+APP_RELEASE_VER)
+    msg_hdr_print("n", "* APP date:    "+APP_RELEASE_DATE)
+    msg_hdr_print("n", "========================================================")
+
 if __name__ == '__main__':
     APP_HEADER()
-    # STEP0.Mode switch
-    print("<system> Mode select")
-    print("         [0] Create an demo config file.")
-    print("         [1] Combine images if config.txt already exist.")
+    
+    # [STEP0] Mode switch
+    msg_hdr_print("s", "Mode select")
+    msg_hdr_print("n", "[0] Create an demo config file.", "         ")
+    msg_hdr_print("n", "[1] Combine images if config.txt already exist.", "         ")
     mode = input(">> mode: ")
     if mode == '0':
-        print("<system> Start create demo config file.")
+        msg_hdr_print("s", "Start create demo config file.")
         if not is_file_exist(IMG_STORE):
-            print('<system> Folder "'+IMG_STORE+'" not exist, creating it...')
+            msg_hdr_print("s", 'Folder "'+IMG_STORE+'" not exist, creating it...')
             os.mkdir(IMG_STORE)
 
         TOOL_CONFIG_WR('W', CONFIG_FILE)
-        print("<system> Demo config file create success!")
-        print('         Please modify contents by following "README.txt"!')
-        print('         Please add 4 images into "'+IMG_STORE+'"!')
+        msg_hdr_print("s", "Demo config file create success!")
+        msg_hdr_print("n", 'Please modify contents by following "README.txt"!', "         ")
+        msg_hdr_print("n", 'Please add 4 images into "'+IMG_STORE+'"!', "         ")
         sys.exit(0)
     elif mode == '1':
-        print("<system> Start combine images task.")
+        msg_hdr_print("s", "Start combine images task.")
     else:
-        print("<warn> No such mode!")
+        msg_hdr_print("w", "No such mode!")
         sys.exit(0)
             
     if not is_file_exist(CONFIG_FILE):
-        print("<error> Config file not found, please create it first!")
+        msg_hdr_print("e", "Config file not found, please create it first!")
         sys.exit(0)
     
     err_flag = 0
     path_lst = []
     offset_lst = []
     size_lst = []
-    last_img_unit = 0
+    block_unit = 0
     output_img_path = ""
     
-    # Read config file
+    # [STEP1] Read config file
     output = TOOL_CONFIG_WR('R', CONFIG_FILE)
     
-    print("\n<system> Reading config file...")
-    print("[Common config]")
-    print("* block_unit:  ", output[0][0])
-    last_img_unit = output[0][0]
-    print("* output_path: ", output[0][1])
+    msg_hdr_print("s", "Reading config file...", "\n")
+    msg_hdr_print("n", "[Common config]")
+    msg_hdr_print("n", "* block_unit:   "+str(output[0][0]))
+    block_unit = output[0][0]*1024
+    msg_hdr_print("n", "* output_path:  "+output[0][1])
     output_img_path = output[0][1]
     
-    print("[Image config]")
+    msg_hdr_print("n", "[Image config]")
     for i in range(IMG_NUM):
-        print("* Img"+str(i)+":")
-        print("       path:   ", output[1][i][0])
-        print("       offset: ", output[1][i][1])
+        msg_hdr_print("n", "* Img"+str(i)+":")
+        msg_hdr_print("n", "path:    "+output[1][i][0], "       ")
+        msg_hdr_print("n", "offset:  "+str(output[1][i][1]), "       ")
         
         if not is_file_exist(output[1][i][0]):
-            print("       exist:   X")
-            print("       size:    X")
+            msg_hdr_print("n", "exist:   X", "       ")
+            msg_hdr_print("n", "size:    X", "       ")
             err_flag = 1
             continue
         else:
-            print("       exist:   O")
+            msg_hdr_print("n", "exist:   O", "       ")
             
         f_size = is_binary(output[1][i][0])
         if not f_size:
-            print("       size:    None-binary/Empty file")
+            msg_hdr_print("n", "size:    None-binary/Empty file", "       ")
             err_flag = 1
             continue
         else:
-            print("       size:    "+str(byte_to_k(f_size))+"k("+str(f_size)+"b)")
+            msg_hdr_print("n", "size:    "+str(byte_to_k(f_size))+"k("+str(f_size)+"b)", "       ")
             
         path_lst.append(output[1][i][0])
         offset_lst.append(int(output[1][i][1], 16))
         size_lst.append(f_size)
     
     if err_flag:
-        print("<error> There's at least one image lost or file type error, please check it in dir ", IMG_STORE)
+        msg_hdr_print("e", "There's at least one image lost or file type error, please check it in dir "+IMG_STORE)
         sys.exit(0)
     
     if not is_file_size_legal(size_lst, offset_lst, path_lst):
-        print("<error> File size check failed, please check whether offset sets wrong!")
+        msg_hdr_print("e", "File size check failed, please check whether offset sets wrong!")
         sys.exit(0)
     
-    print("\n<system> Start combine binary files...")
+    # [STEP2] Combine images
+    msg_hdr_print("s", "Start combine binary files...", "\n")
     comb_data = []
     for img_idx in range(IMG_NUM):
-        print("<system> Combine Img_"+str(img_idx)+"...")
+        msg_hdr_print("n", "Combine Img_"+str(img_idx)+"...", "         ")
+        
+        # check whether image offset set wrong
         if offset_lst[img_idx] < len(comb_data):
-            print("<error> Img_"+str(img_idx)+" offset should >= "+str(len(comb_data)))
+            msg_hdr_print("e", "Img_"+str(img_idx)+" offset should >= "+str(len(comb_data)))
             sys.exit(0)
 
         with open(path_lst[img_idx],"rb") as f:
             data = f.read()
         
+        # if first image start with non-zeror offset, need to pad first
+        if not img_idx:
+            for i in range(offset_lst[0]):
+                comb_data.append(0xff)
+        
+        # append image
         for i in range(len(data)):
             comb_data.append(data[i])
         
+        # append backward padding
         if (img_idx+1) == 4:
-            add_num = len(data)%last_img_unit
+            add_num = block_unit - ( len(comb_data)%block_unit )
         else:
             add_num = offset_lst[img_idx+1]-len(comb_data)
 
@@ -197,6 +220,6 @@ if __name__ == '__main__':
     with open(output_img_path, 'wb') as f:
         f.write(bytearray(comb_data))
     
-    print("\n<system> Image combine success with "+str(byte_to_k(len(comb_data)))+"k("+str(len(comb_data))+"b).")
-    print('         Please check output file named "'+output_img_path+'"')
+    msg_hdr_print("s", "Image combine success with "+str(byte_to_k(len(comb_data)))+"k("+str(len(comb_data))+"b).", "\n")
+    msg_hdr_print("n", 'Please check output file named "'+output_img_path+'"',"         ")
     
