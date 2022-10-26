@@ -3,21 +3,51 @@
 """
 Created on Tue Feb 22 09:42:43 2022
 
-@author: mouchen
+@author: Mouchen
+@discription: image combine for 4 images
+@note: image format follow bellow
+        lo byte              hi byte
+        [        0x00000004        ] msb, 4bytes
+        [      image1 offset       ] msb, 4bytes
+        [       image1 size        ] msb, 4bytes
+        [      image2 offset       ] msb, 4bytes
+        [       image2 size        ] msb, 4bytes
+        [      image3 offset       ] msb, 4bytes
+        [       image3 size        ] msb, 4bytes
+        [      image4 offset       ] msb, 4bytes
+        [       image4 size        ] msb, 4bytes
+        padding to image1 offset with 0xFF
+        [       image1 data        ]
+        padding to image2 offset with 0xFF
+        [       image2 data        ]
+        padding to image3 offset with 0xFF
+        [       image3 data        ]
+        padding to image4 offset with 0xFF
+        [       image4 data        ]
+        padding based on 64k unit with 0xFF
+        [      MD5 encryption      ] msb, 16bytes
 """
-import json, os, sys
+import json, os, sys, hashlib
 
 APP_NAME = "IMAGES COMBINE SCRIPT"
 APP_AUTH = "Mouchen"
-APP_RELEASE_VER = "1.0.0"
-APP_RELEASE_DATE = "2022.02.22"
+APP_RELEASE_VER = "1.1.0"
+APP_RELEASE_DATE = "2022.10.26"
 
 IMG_NUM = 4
 IMG_STORE = "./img/"
-OFFSET_LST = [0x0, 0x4b000, 0x4b000*2, 0x4b000*3]
 BLOCK_UNIT = 64 # with 'k'
+HEADER_SIZE = 36 # WITH 'byte'
 CONFIG_FILE = "./config.txt"
 OUTPUT_IMG_PATH = "output_img.bin"
+EN_ENCRIPTION = "enable"
+
+OFFSET_LST = [
+    0x0 + HEADER_SIZE,
+    0x4b000 + HEADER_SIZE,
+    0x4b000*2 + HEADER_SIZE,
+    0x4b000*3 + HEADER_SIZE
+]
     
 def msg_hdr_print(hdr_type, msg, pre_msg=""):
     if hdr_type == "s":     #system
@@ -47,12 +77,57 @@ def is_binary(file_path):
         return os.path.getsize(file_path)
 
 def is_file_size_legal(img_size_lst, img_offset_lst, img_path_lst):
+    # Check list size
     if (len(img_size_lst)!=IMG_NUM or len(img_offset_lst)!=IMG_NUM or len(img_path_lst)!=IMG_NUM):
         return False
+
+    for i in range(IMG_NUM):
+        # Check offset greater than header size
+        if img_offset_lst[i] < HEADER_SIZE:
+            msg_hdr_print("e", "Image " + str(i) + " offset should >= header size " + str(HEADER_SIZE))
+            return False
+        if i:
+            # Check offset legal
+            if img_offset_lst[i] < (img_offset_lst[i-1] + img_size_lst[i-1]):
+                msg_hdr_print("e", "Image " + str(i) + " offset should >= last image offset + size = " + str(img_offset_lst[i-1] + img_size_lst[i-1]))
+                return False
     return True
+
+def get_md5_from_file(file_path) -> str:
+    hash_md5 = hashlib.md5()
+
+    with open(file_path, "rb") as image:
+        for chunk in iter(lambda: image.read(4096), b""):
+            hash_md5.update(chunk)
+
+    return hash_md5.hexdigest()
 
 def byte_to_k(byte_num):
     return round(byte_num/1024)
+
+def gen_bytes(num, pad_size, pad_val_str, mode):
+    hex_str = str(hex(num))
+    hex_str = hex_str.replace("0x", "")
+
+    output = []
+    if not pad_size:
+        return output
+
+    if ( len(hex_str) ) > pad_size*2:
+        return output
+
+    # padding
+    if len(hex_str) != pad_size*2:
+        hex_str = pad_val_str*(pad_size*2 - len(hex_str)) + hex_str
+
+    if mode == "msb":
+        for i in range( 0, len(hex_str), 2 ):
+            output.append( int(hex_str[i]+hex_str[i+1], 16) )
+    elif mode == "lsb":
+        for i in range( len(hex_str)-1, 0, -2 ):
+            output.append( int(hex_str[i-1]+hex_str[i], 16) )
+
+    return output
 
 def TOOL_CONFIG_WR(mode, file):
     data = {}
@@ -62,7 +137,8 @@ def TOOL_CONFIG_WR(mode, file):
         data['COMMON_CONFIG'] = []
         data['COMMON_CONFIG'].append({
             'block_unit': BLOCK_UNIT,
-            'output_path': OUTPUT_IMG_PATH
+            'output_path': OUTPUT_IMG_PATH,
+            'encryption': EN_ENCRIPTION
         })
         
         # IMAGE INFO
@@ -83,7 +159,7 @@ def TOOL_CONFIG_WR(mode, file):
             data = json.load(json_file)
             
             # Colect <Common config>            
-            COMMON_CFG = [ data['COMMON_CONFIG'][0]['block_unit'], data['COMMON_CONFIG'][0]['output_path'] ]
+            COMMON_CFG = [ data['COMMON_CONFIG'][0]['block_unit'], data['COMMON_CONFIG'][0]['output_path'], data['COMMON_CONFIG'][0]['encryption'] ]
             
             # Colect <Img config>            
             IMG_CFG = []
@@ -140,17 +216,28 @@ if __name__ == '__main__':
     size_lst = []
     block_unit = 0
     output_img_path = ""
-    
+    en_encryption = 0
+
     # [STEP1] Read config file
     output = TOOL_CONFIG_WR('R', CONFIG_FILE)
-    
+
+    if len(output[1]) != IMG_NUM:
+        msg_hdr_print("e", "Should given " + str(IMG_NUM) + " images config in config.txt!")
+        sys.exit(0)
+
     msg_hdr_print("s", "Reading config file...", "\n")
     msg_hdr_print("n", "[Common config]")
     msg_hdr_print("n", "* block_unit:   "+str(output[0][0]))
     block_unit = output[0][0]*1024
     msg_hdr_print("n", "* output_path:  "+output[0][1])
     output_img_path = output[0][1]
-    
+    if output[0][2].lower() == "enable":
+        msg_hdr_print("n", "* encryption:   enable")
+        en_encryption = 1
+    else:
+        msg_hdr_print("n", "* encryption:   disable")
+        en_encryption = 0
+
     msg_hdr_print("n", "[Image config]")
     for i in range(IMG_NUM):
         msg_hdr_print("n", "* Img"+str(i)+":")
@@ -185,9 +272,16 @@ if __name__ == '__main__':
         msg_hdr_print("e", "File size check failed, please check whether offset sets wrong!")
         sys.exit(0)
     
-    # [STEP2] Combine images
-    msg_hdr_print("s", "Start combine binary files...", "\n")
+    # [STEP2] Add Header
+    msg_hdr_print("s", "Adding header to image...", "\n")
     comb_data = []
+    comb_data += gen_bytes(4, 4, "0", "msb")
+    for img_idx in range(IMG_NUM):
+        comb_data += gen_bytes(offset_lst[img_idx], 4, "0", "msb")
+        comb_data += gen_bytes(size_lst[img_idx], 4, "0", "msb")
+
+    # [STEP3] Combine images
+    msg_hdr_print("s", "Start combine binary files...", "\n")
     for img_idx in range(IMG_NUM):
         msg_hdr_print("n", "Combine Img_"+str(img_idx)+"...", "         ")
         
@@ -201,7 +295,7 @@ if __name__ == '__main__':
         
         # if first image start with non-zeror offset, need to pad first
         if not img_idx:
-            for i in range(offset_lst[0]):
+            for i in range(offset_lst[0] - len(comb_data)):
                 comb_data.append(0xff)
         
         # append image
@@ -219,7 +313,16 @@ if __name__ == '__main__':
     
     with open(output_img_path, 'wb') as f:
         f.write(bytearray(comb_data))
+
+    # [STEP4] (optional)Add MD5 16bytes
+    if en_encryption:
+        msg_hdr_print("s", "Adding MD5 encryption bytes to image...", "\n")
+        md5str = get_md5_from_file(output_img_path)
+        for i in range( 0, 32, 2 ):
+            comb_data.append( int(md5str[i] + md5str[i+1], 16) )
+
+        with open(output_img_path, 'wb') as f:
+            f.write(bytearray(comb_data))
     
     msg_hdr_print("s", "Image combine success with "+str(byte_to_k(len(comb_data)))+"k("+str(len(comb_data))+"b).", "\n")
     msg_hdr_print("n", 'Please check output file named "'+output_img_path+'"',"         ")
-    
