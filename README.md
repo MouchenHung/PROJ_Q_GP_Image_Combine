@@ -7,8 +7,23 @@ Combine 4 image to 1 images by following config file.
 ### First rlease date:
     2022.02.22
 
-### Version: 
-- 1.0 - First commit - 2022/02/22
+### Version:
+- 1.1.0 - 2022/10/26
+  - Feature:
+    - Add header to output image with 36bytes
+      - [Byte04:01(msb)]  Numbers of image
+      - [Byte08:05(msb)]  Image1 offset
+      - [Byte12:09(msb)]  Image1 size
+      - [Byte16:13(msb)]  Image2 offset
+      - [Byte20:17(msb)]  Image2 size
+      - [Byte24:21(msb)]  Image3 offset
+      - [Byte28:25(msb)]  Image3 size
+      - [Byte32:29(msb)]  Image4 offset
+      - [Byte36:33(msb)]  Image4 size
+    - Add MD5 as last 16 bytes
+      - [ByteN-16:N(msb)] 16bytes of MD5
+  - Bug: none
+- 1.0.0 - First commit - 2022/02/22
   - Feature: none
   - Bug: none
 
