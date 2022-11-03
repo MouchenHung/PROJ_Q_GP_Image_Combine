@@ -6,33 +6,37 @@ Created on Tue Feb 22 09:42:43 2022
 @author: Mouchen
 @discription: image combine for 4 images
 @note: image format follow bellow
-        lo byte              hi byte
-        [        0x00000004        ] msb, 4bytes
-        [      image1 offset       ] msb, 4bytes
-        [       image1 size        ] msb, 4bytes
-        [      image2 offset       ] msb, 4bytes
-        [       image2 size        ] msb, 4bytes
-        [      image3 offset       ] msb, 4bytes
-        [       image3 size        ] msb, 4bytes
-        [      image4 offset       ] msb, 4bytes
-        [       image4 size        ] msb, 4bytes
-        padding to image1 offset with 0xFF
-        [       image1 data        ]
-        padding to image2 offset with 0xFF
-        [       image2 data        ]
-        padding to image3 offset with 0xFF
-        [       image3 data        ]
-        padding to image4 offset with 0xFF
-        [       image4 data        ]
-        padding based on 64k unit with 0xFF
-        [      MD5 encryption      ] msb, 16bytes
+    lo byte              hi byte
+    [        0x00000004        ] msb, 4bytes
+    [      image1 offset       ] msb, 4bytes
+    [       image1 size        ] msb, 4bytes
+    [      image2 offset       ] msb, 4bytes
+    [       image2 size        ] msb, 4bytes
+    [      image3 offset       ] msb, 4bytes
+    [       image3 size        ] msb, 4bytes
+    [      image4 offset       ] msb, 4bytes
+    [       image4 size        ] msb, 4bytes
+    padding to image1 offset with 0xFF
+    [       image1 data        ]
+    padding to image2 offset with 0xFF
+    [       image2 data        ]
+    padding to image3 offset with 0xFF
+    [       image3 data        ]
+    padding to image4 offset with 0xFF
+    [       image4 data        ]
+    padding based on 64k unit with 0xFF
+    [      MD5 encryption      ] msb, 16bytes
+@history: release data
+    * v1.1.1 - 2022/11/03
+    * v1.1.0 - 2022/10/26
+    * v1.0.0 - 2022/02/22
 """
 import json, os, sys, hashlib
 
 APP_NAME = "IMAGES COMBINE SCRIPT"
 APP_AUTH = "Mouchen"
 APP_RELEASE_VER = "1.1.1"
-APP_RELEASE_DATE = "2022.11.03"
+APP_RELEASE_DATE = "2022/11/03"
 
 IMG_NUM = 4
 IMG_STORE = "./img/"
