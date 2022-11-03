@@ -31,24 +31,39 @@ import json, os, sys, hashlib
 
 APP_NAME = "IMAGES COMBINE SCRIPT"
 APP_AUTH = "Mouchen"
-APP_RELEASE_VER = "1.1.0"
-APP_RELEASE_DATE = "2022.10.26"
+APP_RELEASE_VER = "1.1.1"
+APP_RELEASE_DATE = "2022.11.03"
 
 IMG_NUM = 4
 IMG_STORE = "./img/"
-BLOCK_UNIT = 64 # with 'k'
 HEADER_SIZE = 36 # WITH 'byte'
 CONFIG_FILE = "./config.txt"
+
+"""
+CONFIG file demo
+"""
+BLOCK_UNIT = 64 # with 'k'
 OUTPUT_IMG_PATH = "output_img.bin"
 EN_ENCRIPTION = "enable"
-
-OFFSET_LST = [
+DEMO_IMG_PREFIX = "test_img"
+DEMO_IMG_OFST_LST = [
     0x0 + HEADER_SIZE,
     0x4b000 + HEADER_SIZE,
     0x4b000*2 + HEADER_SIZE,
     0x4b000*3 + HEADER_SIZE
 ]
-    
+
+"""
+PADDING MODE
+    [0] Image offset set by config file
+    [1] Image offset set by padding method
+"""
+COMB_MODE_FLAG = 0
+IMG_GAP_BYTES_IN_PADDING_MODE = 16
+
+"""
+    =================================== COMMON LIBRARY ===================================
+"""
 def msg_hdr_print(hdr_type, msg, pre_msg=""):
     if hdr_type == "s":     #system
         header = "<system> "
@@ -143,11 +158,11 @@ def TOOL_CONFIG_WR(mode, file):
         
         # IMAGE INFO
         data['IMG_CONFIG'] = []
-        for i in range(len(OFFSET_LST)):
+        for i in range(len(DEMO_IMG_OFST_LST)):
             data['IMG_CONFIG'].append({
-                'name': "IMG_"+str(i),
-                'path': IMG_STORE + "test_img"+str(i)+".bin",
-                'offset': hex(OFFSET_LST[i])
+                'name': "IMG_" + str(i),
+                'path': IMG_STORE + DEMO_IMG_PREFIX + str(i) + ".bin",
+                'offset': hex(DEMO_IMG_OFST_LST[i])
             })
             
         with open(file, 'w') as outfile:
@@ -181,13 +196,18 @@ def APP_HEADER():
     msg_hdr_print("n", "* APP date:    "+APP_RELEASE_DATE)
     msg_hdr_print("n", "========================================================")
 
+"""
+    =================================== MAIN CODE ===================================
+"""
 if __name__ == '__main__':
     APP_HEADER()
     
     # [STEP0] Mode switch
     msg_hdr_print("s", "Mode select")
     msg_hdr_print("n", "[0] Create an demo config file.", "         ")
-    msg_hdr_print("n", "[1] Combine images if config.txt already exist.", "         ")
+    msg_hdr_print("n", "[1] Combine images with offset in config file.", "         ")
+    msg_hdr_print("n", "[2] Combine images automatic by padding offset.", "         ")
+    msg_hdr_print("n", "* Note: [1]/[2] config file required!", "         ")
     mode = input(">> mode: ")
     if mode == '0':
         msg_hdr_print("s", "Start create demo config file.")
@@ -201,7 +221,13 @@ if __name__ == '__main__':
         msg_hdr_print("n", 'Please add 4 images into "'+IMG_STORE+'"!', "         ")
         sys.exit(0)
     elif mode == '1':
-        msg_hdr_print("s", "Start combine images task.")
+        msg_hdr_print("s", "Start combine images task by given offset.")
+        COMB_MODE_FLAG = 0
+    elif mode == '2':
+        msg_hdr_print("s", "Start combine images task by padding offset with interval "
+            + str(IMG_GAP_BYTES_IN_PADDING_MODE) + " bytes."
+        )
+        COMB_MODE_FLAG = 1
     else:
         msg_hdr_print("w", "No such mode!")
         sys.exit(0)
@@ -240,29 +266,41 @@ if __name__ == '__main__':
 
     msg_hdr_print("n", "[Image config]")
     for i in range(IMG_NUM):
-        msg_hdr_print("n", "* Img"+str(i)+":")
-        msg_hdr_print("n", "path:    "+output[1][i][0], "       ")
-        msg_hdr_print("n", "offset:  "+str(output[1][i][1]), "       ")
+        cur_img_path = output[1][i][0]
+        cur_img_exist = is_file_exist(cur_img_path)
+        if cur_img_exist:
+            cur_img_size = is_binary(cur_img_path)
+        if COMB_MODE_FLAG == 0:
+            cur_img_ofst = output[1][i][1]
+        else:
+            if i == 0:
+                cur_img_ofst = hex( HEADER_SIZE )
+            else:
+                cur_img_ofst = hex( offset_lst[i-1] + size_lst[i-1] + IMG_GAP_BYTES_IN_PADDING_MODE )
+
+        msg_hdr_print("n", "* Img" + str(i) + ":")
+        msg_hdr_print("n", "path:    " + cur_img_path, "       ")
         
-        if not is_file_exist(output[1][i][0]):
+        if not cur_img_exist:
             msg_hdr_print("n", "exist:   X", "       ")
             msg_hdr_print("n", "size:    X", "       ")
             err_flag = 1
             continue
         else:
             msg_hdr_print("n", "exist:   O", "       ")
-            
-        f_size = is_binary(output[1][i][0])
-        if not f_size:
+
+        msg_hdr_print("n", "offset:  " + cur_img_ofst, "       ")
+
+        if not cur_img_size:
             msg_hdr_print("n", "size:    None-binary/Empty file", "       ")
             err_flag = 1
             continue
         else:
-            msg_hdr_print("n", "size:    "+str(byte_to_k(f_size))+"k("+str(f_size)+"b)", "       ")
+            msg_hdr_print("n", "size:    "+str(byte_to_k(cur_img_size))+"k("+str(cur_img_size)+" bytes)", "       ")
             
-        path_lst.append(output[1][i][0])
-        offset_lst.append(int(output[1][i][1], 16))
-        size_lst.append(f_size)
+        path_lst.append(cur_img_path)
+        offset_lst.append(int(cur_img_ofst, 16))
+        size_lst.append(cur_img_size)
     
     if err_flag:
         msg_hdr_print("e", "There's at least one image lost or file type error, please check it in dir "+IMG_STORE)
