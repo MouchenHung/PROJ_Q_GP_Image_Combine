@@ -100,6 +100,7 @@ mouchen@mouchen-System-Product-Name: ./img_comb
   - **STEP3. Run**\
            --> python img_comb.py --> choose mode[1] to use cfg-offset mode
 ```
+mouchen@mouchen-System-Product-Name: ./img_comb
 ========================================================
 * APP name:    IMAGES COMBINE SCRIPT
 * APP auth:    Mouchen
@@ -157,6 +158,7 @@ mouchen@mouchen-System-Product-Name: ./img_comb
 \
            --> python img_comb.py --> choose mode[2] to use auto-offset mode
 ```
+mouchen@mouchen-System-Product-Name: ./img_comb
 ========================================================
 * APP name:    IMAGES COMBINE SCRIPT
 * APP auth:    Mouchen
