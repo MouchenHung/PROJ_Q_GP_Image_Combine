@@ -26,6 +26,10 @@ Combine 4 image to 1 images by following config file.
     2022.02.22
 
 ### Version:
+- 1.2.0 - 2022/12/21
+  - Feature:
+    - Add one-line command method for APP
+    - Add "help"
 - 1.1.1 - 2022/11/03
   - Feature:
     - Add automatic-offset mode by input mode 2. Still need config.txt but generating offset automaitcally.
@@ -69,6 +73,7 @@ Combine 4 image to 1 images by following config file.
 ### Usage
   - **STEP1. Create a demo config file**\
            --> python img_comb.py --> choose mode[0]
+           --> python img_comb.py -m 0 --> to choose mode[0]
 ```
 mouchen@mouchen-System-Product-Name: ./img_comb
 ========================================================
@@ -99,6 +104,7 @@ mouchen@mouchen-System-Product-Name: ./img_comb
 
   - **STEP3. Run**\
            --> python img_comb.py --> choose mode[1] to use cfg-offset mode
+           --> python img_comb.py -m 1 --> to choose mode[1] to use cfg-offset mode
 ```
 mouchen@mouchen-System-Product-Name: ./img_comb
 ========================================================
@@ -157,6 +163,7 @@ mouchen@mouchen-System-Product-Name: ./img_comb
 ```
 \
            --> python img_comb.py --> choose mode[2] to use auto-offset mode
+           --> python img_comb.py -m 2 --> to choose mode[2] to use auto-offset mode
 ```
 mouchen@mouchen-System-Product-Name: ./img_comb
 ========================================================
