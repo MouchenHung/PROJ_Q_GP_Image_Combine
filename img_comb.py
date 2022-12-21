@@ -35,8 +35,8 @@ import json, os, sys, hashlib
 
 APP_NAME = "IMAGES COMBINE SCRIPT"
 APP_AUTH = "Mouchen"
-APP_RELEASE_VER = "1.1.1"
-APP_RELEASE_DATE = "2022/11/03"
+APP_RELEASE_VER = "1.2.0"
+APP_RELEASE_DATE = "2022/12/21"
 
 IMG_NUM = 4
 IMG_STORE = "./img/"
@@ -192,6 +192,39 @@ def TOOL_CONFIG_WR(mode, file):
             
             return PACKAGE_CONFIG
 
+class APP_ARG():
+    def __init__(self, argv):
+        self.argv = argv
+        self.argc = len(self.argv)
+        self.mode_select = "na"
+
+    def arg_parsing(self):
+        for i in range(self.argc):
+            if self.argv[i] == "-m":
+                if i+1 < self.argc:
+                    if "-" not in self.argv[i+1]:
+                        self.mode_select = self.argv[i+1]
+                        i+=1
+
+def APP_HELP():
+    msg_hdr_print("n", "--------------------------------------------------------------------", "\n")
+    msg_hdr_print("n", "HELP:")
+    msg_hdr_print("n", "-m      Selet mode.")
+    msg_hdr_print("n", "          [0] Create an demo config file.")
+    msg_hdr_print("n", "          [1] Combine images with offset in config file.")
+    msg_hdr_print("n", "          [2] Combine images automatic by padding offset.")
+    msg_hdr_print("n", "")
+    msg_hdr_print("n", "[step1]: (optional) Create config file if not exist config.txt file.")
+    msg_hdr_print("n", "    (one-line command) './img_comb -m 0'")
+    msg_hdr_print("n", "    (select inside) './img_comb' and select '0'")
+    msg_hdr_print("n", "[step2-1]: Start combine 4 images with offset given in config file.")
+    msg_hdr_print("n", "    (one-line command) './img_comb -m 1'")
+    msg_hdr_print("n", "    (select inside) './img_comb' and select '1'")
+    msg_hdr_print("n", "[step2-2]: Start combine 4 images by automatic padding offset.")
+    msg_hdr_print("n", "    (one-line command)./img_comb -m 2")
+    msg_hdr_print("n", "    (select inside) './img_comb' and select '2'")
+    msg_hdr_print("n", "--------------------------------------------------------------------")
+
 def APP_HEADER():
     msg_hdr_print("n", "========================================================")
     msg_hdr_print("n", "* APP name:    "+APP_NAME)
@@ -205,15 +238,21 @@ def APP_HEADER():
 """
 if __name__ == '__main__':
     APP_HEADER()
-    
+
     # [STEP0] Mode switch
-    msg_hdr_print("s", "Mode select")
-    msg_hdr_print("n", "[0] Create an demo config file.", "         ")
-    msg_hdr_print("n", "[1] Combine images with offset in config file.", "         ")
-    msg_hdr_print("n", "[2] Combine images automatic by padding offset.", "         ")
-    msg_hdr_print("n", "* Note: [1]/[2] config file required!", "         ")
-    mode = input(">> mode: ")
-    if mode == '0':
+    if len(sys.argv) != 1:
+        app_arg = APP_ARG(sys.argv)
+        app_arg.arg_parsing()
+        select_mode = app_arg.mode_select
+    else:
+        msg_hdr_print("s", "Mode select")
+        msg_hdr_print("n", "[0] Create an demo config file.", "         ")
+        msg_hdr_print("n", "[1] Combine images with offset in config file.", "         ")
+        msg_hdr_print("n", "[2] Combine images automatic by padding offset.", "         ")
+        msg_hdr_print("n", "* Note: [1]/[2] config file required!", "         ")
+        select_mode = input(">> mode: ")
+
+    if select_mode == '0':
         msg_hdr_print("s", "Start create demo config file.")
         if not is_file_exist(IMG_STORE):
             msg_hdr_print("s", 'Folder "'+IMG_STORE+'" not exist, creating it...')
@@ -224,16 +263,17 @@ if __name__ == '__main__':
         msg_hdr_print("n", 'Please modify contents by following "README.txt"!', "         ")
         msg_hdr_print("n", 'Please add 4 images into "'+IMG_STORE+'"!', "         ")
         sys.exit(0)
-    elif mode == '1':
+    elif select_mode == '1':
         msg_hdr_print("s", "Start combine images task by given offset.")
         COMB_MODE_FLAG = 0
-    elif mode == '2':
+    elif select_mode == '2':
         msg_hdr_print("s", "Start combine images task by padding offset with interval "
             + str(IMG_GAP_BYTES_IN_PADDING_MODE) + " bytes."
         )
         COMB_MODE_FLAG = 1
     else:
         msg_hdr_print("w", "No such mode!")
+        APP_HELP()
         sys.exit(0)
             
     if not is_file_exist(CONFIG_FILE):
